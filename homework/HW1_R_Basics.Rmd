@@ -32,6 +32,8 @@ A function is code that produces some result, like printing. The function for pr
 
 ## Have R print Hello World
 
+
+
 ```{r}
 print("Hello World")
 ```
@@ -81,6 +83,7 @@ p
 Calling variables means just typing the variable name in a code block and running it.
 
 Call y, see y value in console
+
 
 ```{r}
 y

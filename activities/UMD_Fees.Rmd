@@ -6,21 +6,30 @@ Follow along with the demo to learn how to calculate percentage change using R a
 
 
 ### Task 1: Load the tidyverse
-
+```{r}
+library(tidyverse)
+```
 
 
 ### Task 2: Load the UMD Fees dataset from https://raw.githubusercontent.com/dwillis/jour405/refs/heads/main/data/umd_fees.csv
 
+```{r}
+umd_fees <- read_csv("https://raw.githubusercontent.com/dwillis/jour405/refs/heads/main/data/umd_fees.csv")
+```
 
 
 ### Task 3: Calculate the percentage change in each category between Fall 2024 and Fall 2021 using `mutate()`
 
+```{r}
+umd_fees |> 
+  mutate(pct_change = (`Fall 2024` - `Fall 2021`)/ `Fall 2021` * 100)
 
-
+```
 ### Task 4: Describe our results
 
 Write a few sentences about what you found in the data. What's the story here?
 
+The story here is that Student Fees have increased almost 20% in the last four years. With large increase in Shuttle Bus Fees and a new fee since 2021 in the Student Counseling Center, every single fee has increased, but why?  Are student reaping the benefits of what they pay? How have the increase of fees improved (if at all) students life style? 
 
 
 
