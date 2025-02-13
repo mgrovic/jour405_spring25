@@ -40,7 +40,7 @@ team_aces |>
 
 Write a couple of sentences that puts Maryland into context with the other teams in the dataset. You can do some Internet research to help with this.
 
-University of Maryland volleyball may have had a rough season, but when it comes to serving, they were able to hang with the best of the best. With 223 total aces, UMD volleyball ranks in the 95% percentile. While winning programs like UTEP and Sac St. lead the county, aces were a bright spot during a rough season for the terps. 
+University of Maryland volleyball may have had a rough season, but when it comes to serving, they were able to hang with the best of the best. With 223 total aces, UMD volleyball ranks in the 95% percentile. While winning programs like UTEP and Sac St. lead the county, aces were a bright spot during a rough season for the Terps. 
 
 
 
