@@ -64,7 +64,30 @@ Write up a lede and nutgraf of a story with the _best_ story idea you've found i
 ANSWER HERE
 Statistics say that crime is soaring in Ocean City, but the numbers may not tell the whole truth. 
 
-While Ocean City has the highest crime rate for both violent and property related crimes per 1000 people in all of Maryland, these numbers don't account for the mass influx of tourists each year. According to Ocean City's website, the popular beach town will experience upwards of eight-million visitors a year, dwarfing their population of less than 7,000 permanent residents. While over 1000 total crimes in 2020 may seem extremely high for a population of its size, the rush of tourists may significanty inflate these numbers. 
+While Ocean City has the highest crime rate for both violent and property related crimes per 1000 people in all of Maryland, these numbers don't account for the mass influx of tourists each year. According to Ocean City's website, the popular beach town will experience upwards of eight-million visitors a year, dwarfing their population of less than 7,000 permanent residents. While over 1000 total crimes in 2020 may seem extremely high for a population of its size, the rush of tourists may significant inflate these numbers. 
+
+
+### Task 8 Take the HW4_MD_CityCrime.Rmd notebook you worked on and add a section at the bottom called Task 10. Your task will be to take the violent crime rates for 2020 and do three things:
+
+Using the 2020 violent crime rate, calculate the percentiles using `ntile()`. Save the results to a new dataframe called `md_cities_percentiles`. How many cities are above the 90th percentile?
+There are 11 cities over the 90th percentile. 
+
+```{r}
+md_cities_percentiles <- md_cities_rates |>
+    mutate(percentile = ntile(violent_crime_rate2020, 100))
+view(md_cities_percentiles)
+
+```
+Calculate the Interquartile Range of the 2020 violent crime rate using `summarize()` and R's `IQR()` function. The syntax is similar to how `mean()` works.
+```{r}
+md_cities_rates |>
+    summarize(IQR_violent_crime = IQR(violent_crime_rate2020))
+
+```
+
+Do the results change your best story idea from the previous assignment? Why or why not?
+
+Not necessarily, as I think that although the IQR tells us that there is not a large spread through the data set, I think a deep dive into Ocean City's crime rate is still the most exciting and interesting story to appear in this data. I do find it quite interesting that the IQR is so low (if i am interpreting correctly) and that the Q3 and Q1 are so close together. 
 
 ### Task 9: Save Your Work and Put it on GitHub
 
