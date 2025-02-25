@@ -43,7 +43,7 @@ Take the same code and add a vertical line to the histogram for the mean danceab
 ```{r}
 spotify_songs |> 
   ggplot() + 
-  geom_histogram(aes(x = danceability),  binwidth = .010) +
+  geom_histogram(aes(x = danceability),  binwidth = .05) +
   geom_vline(aes(xintercept = mean(danceability)), color = 'red', linetype = "dashed", size = 1) 
 ```
 
@@ -55,7 +55,7 @@ Take the previous code and add two lines to the histogram for the 1st standard d
 ```{r}
 spotify_songs |> 
   ggplot() + 
-  geom_histogram(aes(x = danceability),  binwidth = .010) +
+  geom_histogram(aes(x = danceability),  binwidth = .025) +
   geom_vline(aes(xintercept = mean(danceability)), color = 'red', linetype = "dashed", size = 1)  +
    geom_vline(aes(xintercept = mean(danceability) - sd(danceability)), color = 'blue', linetype = "dashed", size = 1) +
    geom_vline(aes(xintercept = mean(danceability) + sd(danceability)), color = 'green', linetype = "dashed", size = 1)
