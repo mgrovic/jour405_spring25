@@ -33,7 +33,7 @@ sample_50 <- population |>
   sample_n(50)
 
 sample_10 <- population |> 
-  sample_n(100)
+  sample_n(10)
 ```
 
 
