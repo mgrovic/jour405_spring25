@@ -116,7 +116,7 @@ weighted_by_education <- nonvoters_data |>
   # Sum the weights instead of counting
   summarize(weighted_count = sum(weighted_count), .groups = "drop_last") |>
   # Calculate weighted percentages
-  mutate(weighted_total = sum(weighted_count),
+  mutate(weighted_total = sum(weight),
          weighted_percentage = weighted_count / weighted_total * 100) |>
   ungroup()
 
