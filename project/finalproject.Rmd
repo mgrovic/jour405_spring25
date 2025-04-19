@@ -1,0 +1,51 @@
+---
+title: "finalproject"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+
+```
+
+```{r}
+pg_crime_2023_2025 <- read_csv("~/Desktop/GitHub/Crime_Incidents_July_2023_to_Present_20250419.csv")
+```
+```{r}
+view(pg_crime_2023_2025)
+```
+1) What does it contain and what time period does it cover?
+
+The data above includes case_id, date of occurrence, type of crime, and multiple different location indicators. The data spans from Jan 1 2023 to April 19th.
+
+2) Which columns will be most important for your analysis?
+
+I assume the most important data will be one of the location indicator columns, as it will allow me to combine this dataset with the property values to fully compare them. 
+
+3) What's missing that you might need or want? What questions do you have about it or need help answering? 
+
+Something missing that would be super helpful is a map number or a neighborhood name, something easily linked to the property value data. 
+
+I just don't know with this data alone, how I could combine or join the two datasets, or even make sure that we have some uniform way of determining location. 
+Something like, does the PGPD reporting code corespond to city district numbers etc. 
+
+
+My other data set seems to be not exportable..?
+this is the link
+https://sdat.dat.maryland.gov/RealProperty/Pages/default.aspx
+
+I have been messing around a lot with what to sort by and how to best line it up with the crime data. 
+
+1) What does it contain and what time period does it cover?
+
+When I search, I am using the same timeframe, and using a road that occurs a lot in the crime data. It gives aderress, account number, grantee, housing info, and date sold and selling price. 
+
+2) Which columns will be most important for your analysis?
+Once again, some location column may be the most important to link the data to crime, but the sale price is obviously super important as well. 
+
+3) Once again I would love this data to have a more defining piece of location. You can search for neighborhood and by certian codes but doesn't come up on the sheet. 
+
+How do I export this data?
+
+
+
