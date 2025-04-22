@@ -14,6 +14,26 @@ pg_crime_2023_2025 <- read_csv("~/Desktop/GitHub/Crime_Incidents_July_2023_to_Pr
 ```{r}
 view(pg_crime_2023_2025)
 ```
+
+```{r}
+Grouped_data <- pg_crime_2023_2025 |>
+  group_by(`PGPD Reporting Area`) |>
+  summarise('incident_case_id' = n()) |>
+  arrange(desc(incident_case_id))
+
+```
+
+```{r}
+Grouped_data|> 
+  summarise(mean_crimes = mean(incident_case_id), sd_crimes = sd(incident_case_id))
+```
+Hypothesis: 
+If a PGPD Reporting Area has more than 500 crimes in the area, the property value will be lower than if the Reporting Area has less than 400 crimes
+
+
+
+
+
 1) What does it contain and what time period does it cover?
 
 The data above includes case_id, date of occurrence, type of crime, and multiple different location indicators. The data spans from Jan 1 2023 to April 19th.
