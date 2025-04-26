@@ -50,8 +50,6 @@ max_crimes <- max(Grouped_data$total)
 cat("Data ranges from", min_date, "to", max_date)
 
 ```
-```{r}
-
 
 ```{r}
 Grouped_data <- Grouped_data |>
