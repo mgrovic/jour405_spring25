@@ -21,7 +21,8 @@ view(pg_crime_2023_2025)
 
 ```{r}
 Grouped_data <- pg_crime_2023_2025 |>
-  group_by(`PGPD Reporting Area`) |>
+  filter(!`PGPD Sector` %in% c("FXOS", "SHF", "P10", "FXIN")) |>
+  group_by(`PGPD Sector`) |>
   summarise(total = n()) |>
   arrange(desc(total))
 
@@ -32,22 +33,21 @@ Grouped_data|>
   summarise(mean_crimes = mean(total), sd_crimes = sd(total))
 ```
 ```{r}
-Grouped_data |> 
-  ggplot() + 
-  geom_histogram(aes(x = total),  binwidth = 5) +
-  geom_vline(aes(xintercept = mean(total)), color = 'red', linetype = "dashed", size = 1)  +
-   geom_vline(aes(xintercept = mean(total) - sd(total)), color = 'blue', linetype = "dashed", size = 1) +
-   geom_vline(aes(xintercept = mean(total) + sd(total)), color = 'green', linetype = "dashed", size = 1)
+ggplot(Grouped_data, aes(x = reorder(`PGPD Sector`, -total), y = total)) +
+  geom_col(fill = "steelblue") +
+  geom_hline(yintercept = mean(Grouped_data$total), color = 'red', linetype = "dashed", size = 1) +
+  geom_hline(yintercept = mean(Grouped_data$total) - sd(Grouped_data$total), color = 'blue', linetype = "dashed", size = 1) +
+  geom_hline(yintercept = mean(Grouped_data$total) + sd(Grouped_data$total), color = 'green', linetype = "dashed", size = 1) +
+  labs(x = "PGPD Sector", y = "Total Crimes", title = "Total Crimes by PGPD Sector") +
+  theme_minimal()
 ```
 ```{r}
-Grouped_data |>
-# Check for any missing values
-colSums(is.na(Grouped_data))
+Grouped_data
+
 
 # Check the date range in our data
 min_crimes <- min(Grouped_data$total)
 max_crimes <- max(Grouped_data$total)
-cat("Data ranges from", min_date, "to", max_date)
 
 ```
 
@@ -58,16 +58,49 @@ Grouped_data <- Grouped_data |>
     sd_crime = sd(total),
     z_score = (total - mean_crime) / sd_crime
   )
-
+```
+```{r}
 # Display the data with z-scores
 Grouped_data |>
-  select('PGPD Reporting Area', total, z_score) |>
-  head(10) |>
-  kable(digits = 2)
+  select('PGPD Sector', total, z_score) |>
+  head(10) 
 ```
 
+```{r}
+Grouped_data <- Grouped_data |>
+  mutate(
+    z_score = (total - mean(total)) / sd(total),
+    z_category = factor(case_when(
+      z_score >= 2 ~ "Very High",
+      z_score >= .5 ~ "High",
+      z_score >= -.5 ~ "Average",
+      z_score >= -2 ~ "Low",
+      TRUE ~ "Very Low"
+    ), levels = c("Very High", "High", "Average", "Low", "Very Low"))
+  )
+```
+```{r}
+ggplot(Grouped_data, aes(x = reorder(`PGPD Sector`, -total), y = total, fill =  z_category)) +
+  geom_col() +
+  scale_fill_manual(values = c(
+    "Very High" = "darkred",
+    "High" = "orange",
+    "Average" = "gray70",
+    "Low" = "lightblue",
+    "Very Low" = "blue"
+  )) +
+  labs(
+    x = "PGPD Sector",
+    y = "Total Crimes",
+    fill = "Z-Score Category",
+    title = "Crime Totals by PGPD Sector by Z score"
+  ) +
+  theme_minimal()
+```
+
+
 Hypothesis: 
-If a PGPD Reporting Area has more than 500 crimes in the area, the property value will be lower than if the Reporting Area has less than 400 crimes
+If a PGPD Sector Area has more than 4500 crimes in the area, the property value will be lower than if the Reporting Area has less than 3500 crimes
 
 
 
