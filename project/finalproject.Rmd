@@ -8,6 +8,7 @@ library(tidyverse)  # For data manipulation and visualization
 library(lubridate)  # For handling dates
 library(knitr)      # For nice tables
 library(scales)     # For better axis formatting
+library(sf)
 ```
 
 
