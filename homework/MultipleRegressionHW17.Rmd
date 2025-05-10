@@ -91,7 +91,7 @@ Examine the output of the model, checking the coefficients, residuals, and overa
 Significant predictors: income, pct_unemployed, and pct_white. These are strong contributors to higher turnout.
 Not significant: population, pct_bachelors_higher,  we might consider removing them.
 Multiple R-squared: 0.854  the model explains 85.4% of the variation in turnout, which is very strong. Adjusted R-squared 0.802 adjusts for the number of predictors, still high. F-statistic: 16.55 p = 2.999e-06 meaning the model is statistically significant overall.
-
+Based on the Rsquared value and the F-statistic this is a quite useful model
 ```{r}
 # Build initial model with all predictors
 initial_model <- lm(turnout ~ population + income + pct_bachelors_higher + 
