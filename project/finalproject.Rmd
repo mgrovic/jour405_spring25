@@ -4,6 +4,8 @@ output: html_document
 ---
 
 ```{r}
+install.packages('tidycensus')
+library(tidycensus)
 library(tidyverse)  # For data manipulation and visualization
 library(lubridate)  # For handling dates
 library(knitr)      # For nice tables
@@ -15,7 +17,12 @@ library(sf)
 
 ```{r}
 pg_crime_2023_2025 <- read_csv("~/Desktop/GitHub/Crime_Incidents_July_2023_to_Present_20250419.csv")
+pg_crime_2023_2025_updated <- read_csv("https://raw.githubusercontent.com/dwillis/jour405/refs/heads/main/data/pg_crimes_with_location.csv")
 ```
+```{r}
+census_api_key("03183f1d7157fca8529a26898cff8c1b802565ed", install = TRUE)
+```
+
 ```{r}
 view(pg_crime_2023_2025)
 ```
@@ -97,6 +104,13 @@ ggplot(Grouped_data, aes(x = reorder(`PGPD Sector`, -total), y = total, fill =  
     title = "Crime Totals by PGPD Sector by Z score"
   ) +
   theme_minimal()
+```
+```{r}
+income_by_zip <- get_acs(
+  geography = "zcta",
+  variables = "B19013_001", 
+  year = 2021,
+  survey = "acs5" )
 ```
 
 
