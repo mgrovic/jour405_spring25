@@ -126,6 +126,7 @@ glimpse(pg_zcta_shapes)
 
 
 ```{r}
+#I Used AI for the following lines, To join the PG county zipcode  media income data from the census to my crime dada
 zcta_shapes <- zctas(cb = TRUE, year = 2020)
 
 # Get county boundaries for Maryland
