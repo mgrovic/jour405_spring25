@@ -11,6 +11,8 @@ library(lubridate)  # For handling dates
 library(knitr)      # For nice tables
 library(scales)     # For better axis formatting
 library(sf)
+library(tigris)
+
 ```
 
 
@@ -20,7 +22,7 @@ pg_crime_2023_2025 <- read_csv("~/Desktop/GitHub/Crime_Incidents_July_2023_to_Pr
 pg_crime_2023_2025_updated <- read_csv("https://raw.githubusercontent.com/dwillis/jour405/refs/heads/main/data/pg_crimes_with_location.csv")
 ```
 ```{r}
-census_api_key("03183f1d7157fca8529a26898cff8c1b802565ed", install = TRUE)
+census_api_key("03183f1d7157fca8529a26898cff8c1b802565ed", overwrite = TRUE)
 ```
 
 ```{r}
@@ -28,11 +30,11 @@ view(pg_crime_2023_2025)
 ```
 
 ```{r}
-Grouped_data <- pg_crime_2023_2025 |>
+Grouped_by_zip <- pg_crime_2023_2025_updated |>
   filter(!`PGPD Sector` %in% c("FXOS", "SHF", "P10", "FXIN")) |>
-  group_by(`PGPD Sector`) |>
-  summarise(total = n()) |>
-  arrange(desc(total))
+  group_by(`PGPD Sector`, zip_code) |>
+  summarise(total_crimes = n(), .groups = "drop") |>
+  arrange(desc(total_crimes))
 
 ```
 
@@ -106,13 +108,139 @@ ggplot(Grouped_data, aes(x = reorder(`PGPD Sector`, -total), y = total, fill =  
   theme_minimal()
 ```
 ```{r}
+acs_2022_5_year <- load_variables(2022, "acs5", cache = TRUE)
+
+view(acs_2022_5_year)
+```
+```{r}
 income_by_zip <- get_acs(
   geography = "zcta",
   variables = "B19013_001", 
-  year = 2021,
+  year = 2022,
   survey = "acs5" )
 ```
 
+```{r}
+glimpse(pg_zcta_shapes)
+```
+
+
+```{r}
+zcta_shapes <- zctas(cb = TRUE, year = 2020)
+
+# Get county boundaries for Maryland
+md_counties <- counties(state = "MD", cb = TRUE)
+
+# Transform projections to match
+zcta_shapes <- st_transform(zcta_shapes, st_crs(md_counties))
+
+# Spatial join to identify ZCTAs overlapping with Prince George's County
+pg_zcta_shapes <- st_join(zcta_shapes, md_counties, join = st_intersects) |>
+  filter(NAME == "Prince George's") |>
+  select(GEOID20) %>%
+  distinct()
+```
+```{r}
+pg_income <- income_by_zip %>%
+  filter(GEOID %in% pg_zcta_shapes$GEOID20)
+```
+```{r}
+pg_county <- md_counties %>% filter(NAME == "Prince George's")
+
+```
+
+
+
+```{r}
+pg_income_map <- pg_zcta_shapes %>%
+  left_join(income_by_zip, by = c("GEOID20" = "GEOID"))
+
+```
+
+
+```{r}
+ggplot(data = pg_income_map) +
+  geom_sf(aes(fill = estimate), color = "white") +
+  scale_fill_viridis_c(option = "plasma", na.value = "grey90", name = "Median Income") +
+  labs(
+    title = "Median Household Income by ZIP Code",
+    subtitle = "Prince George's County, MD (ACS 2022)",
+    caption = "Source: U.S. Census Bureau, ACS 5-Year Estimates"
+  ) +
+  theme_minimal()
+```
+```{r}
+zip_crime_counts <- pg_crime_income |>
+  group_by(zip_code) |>
+  summarise(total_crimes = n(), .groups = "drop")
+```
+```{r}
+pg_crime_income_filtered <- pg_crime_income |>
+  left_join(zip_crime_counts, by = "zip_code") |>
+  filter(total_crimes.x > 500)
+```
+```{r}
+pg_crime_income_non_filtered <- pg_crime_income |>
+  left_join(zip_crime_counts, by = "zip_code") 
+```
+
+
+```{r}
+pg_crime_income <- Grouped_by_zip |>
+  left_join(pg_income, by = c("zip_code" = "GEOID"))
+```
+```{r}
+#scatterplot to visualize the relationship between median income and crimes all zipcodes)
+pg_crime_income_non_filtered |>
+  ggplot(aes(x = `estimate`, y = `total_crimes.x`)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(x = "income", y = "total crimes", title = "Scatterplot of total_crimes vs median income")
+```
+
+```{r}
+#scatterplot to visualize the relationship between median income and crimes (only zip codes with more than 500 total crimes)
+pg_crime_income_filtered |>
+  ggplot(aes(x = `estimate`, y = `total_crimes.x`)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(x = "income", y = "total crimes", title = "Scatterplot of total_crimes vs median income")
+```
+```{r}
+model <- lm(`total_crimes.x` ~ `estimate`, data = pg_crime_income_filtered) #(only zip codes with more than 500 total crimes)
+
+summary(model)
+```
+```{r}
+model_non <- lm(`total_crimes.x` ~ `estimate`, data = pg_crime_income_non_filtered) #(all zip codes )
+
+summary(model)
+```
+```{r}
+pg_crime_income_filtered$predicted <- predict(model, newdata = pg_crime_income_filtered)
+
+# Calculate the residuals
+pg_crime_income_filtered <- pg_crime_income_filtered |> 
+  mutate(residual = `total_crimes.x` - predicted)
+
+# Sort the data frame by the absolute value of the residuals in descending order
+pg_crime_income_filtered <- pg_crime_income_filtered |>
+  mutate(abs_residual = abs(residual)) |>
+  arrange(desc(abs_residual))
+```
+
+```{r}
+pg_crime_income_non_filtered$predicted <- predict(model, newdata = pg_crime_income_non_filtered)
+
+# Calculate the residuals
+pg_crime_income_non_filtered <- pg_crime_income_non_filtered |> 
+  mutate(residual = `total_crimes.x` - predicted)
+
+# Sort the data frame by the absolute value of the residuals in descending order
+pg_crime_income_non_filtered <- pg_crime_income_non_filtered |>
+  mutate(abs_residual = abs(residual)) |>
+  arrange(desc(abs_residual))
+```
 
 Hypothesis: 
 If a PGPD Sector Area has more than 4500 crimes in the area, the property value will be lower than if the Reporting Area has less than 3500 crimes
