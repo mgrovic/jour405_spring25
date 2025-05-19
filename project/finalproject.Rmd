@@ -18,10 +18,12 @@ library(tigris)
 
 
 ```{r}
+#data load in
 pg_crime_2023_2025 <- read_csv("~/Desktop/GitHub/Crime_Incidents_July_2023_to_Present_20250419.csv")
 pg_crime_2023_2025_updated <- read_csv("https://raw.githubusercontent.com/dwillis/jour405/refs/heads/main/data/pg_crimes_with_location.csv")
 ```
 ```{r}
+#API Key
 census_api_key("03183f1d7157fca8529a26898cff8c1b802565ed", overwrite = TRUE)
 ```
 
@@ -30,6 +32,18 @@ view(pg_crime_2023_2025)
 ```
 
 ```{r}
+#making a new data set with only specific sectors, and taking away accidents from the crime list. 
+Grouped_data <- pg_crime_2023_2025_updated |>
+   filter(
+    !`PGPD Sector` %in% c("FXOS", "SHF", "P10", "FXIN"),
+    !`clearance_code_inc_type` %in% c("ACCIDENT", "ACCIDENT WITH IMPOUND")
+  ) |>
+  group_by(zip_code) |>
+  summarise(total_crimes = n(), .groups = "drop") |>
+  arrange(desc(total_crimes))
+```
+```{r}
+#i think this is the same, but don't want to delete it1 LOL
 Grouped_by_zip <- pg_crime_2023_2025_updated |>
   filter(!`PGPD Sector` %in% c("FXOS", "SHF", "P10", "FXIN")) |>
   group_by(`PGPD Sector`, zip_code) |>
@@ -39,58 +53,64 @@ Grouped_by_zip <- pg_crime_2023_2025_updated |>
 ```
 
 ```{r}
+#this code block displays the mean and standard deviation 
 Grouped_data|> 
-  summarise(mean_crimes = mean(total), sd_crimes = sd(total))
+  summarise(mean_crimes = mean(total_crimes), sd_crimes = sd(total_crimes))
 ```
 ```{r}
-ggplot(Grouped_data, aes(x = reorder(`PGPD Sector`, -total), y = total)) +
+#histogram of Crimes by Zip Code
+ggplot(Grouped_data, aes(x = reorder(`zip_code`, -total_crimes), y = total_crimes)) +
   geom_col(fill = "steelblue") +
-  geom_hline(yintercept = mean(Grouped_data$total), color = 'red', linetype = "dashed", size = 1) +
-  geom_hline(yintercept = mean(Grouped_data$total) - sd(Grouped_data$total), color = 'blue', linetype = "dashed", size = 1) +
-  geom_hline(yintercept = mean(Grouped_data$total) + sd(Grouped_data$total), color = 'green', linetype = "dashed", size = 1) +
-  labs(x = "PGPD Sector", y = "Total Crimes", title = "Total Crimes by PGPD Sector") +
+  geom_hline(yintercept = mean(Grouped_data$total_crimes), color = 'red', linetype = "dashed", size = 1) +
+  geom_hline(yintercept = mean(Grouped_data$total_crimes) - sd(Grouped_data$total_crimes), color = 'blue', linetype = "dashed", size = 1) +
+  geom_hline(yintercept = mean(Grouped_data$total_crimes) + sd(Grouped_data$total_crimes), color = 'green', linetype = "dashed", size = 1) +
+  labs(x = "zip_code", y = "Total Crimes", title = "Total Crimes by Zipcode") +
   theme_minimal()
 ```
 ```{r}
 Grouped_data
 
 
-# Check the date range in our data
-min_crimes <- min(Grouped_data$total)
-max_crimes <- max(Grouped_data$total)
+# Check the min max range in our data
+min_crimes <- min(Grouped_data$total_crimes)
+max_crimes <- max(Grouped_data$total_crimes)
 
 ```
 
 ```{r}
+#creates z score 
 Grouped_data <- Grouped_data |>
   mutate(
-    mean_crime = mean(total),
-    sd_crime = sd(total),
-    z_score = (total - mean_crime) / sd_crime
+    mean_crime = mean(total_crimes),
+    sd_crime = sd(total_crimes),
+    z_score = (total_crimes - mean_crime) / sd_crime
   )
 ```
 ```{r}
 # Display the data with z-scores
 Grouped_data |>
-  select('PGPD Sector', total, z_score) |>
+  select('zip_code', total_crimes, z_score) |>
   head(10) 
 ```
 
 ```{r}
+#makes category's labeled, based on Z score  
 Grouped_data <- Grouped_data |>
   mutate(
-    z_score = (total - mean(total)) / sd(total),
+    z_score = (total_crimes - mean(total_crimes)) / sd(total_crimes),
     z_category = factor(case_when(
-      z_score >= 2 ~ "Very High",
+      z_score >= 2.5 ~ "Very High",
       z_score >= .5 ~ "High",
       z_score >= -.5 ~ "Average",
-      z_score >= -2 ~ "Low",
+      z_score >= -3 ~ "Low",
       TRUE ~ "Very Low"
     ), levels = c("Very High", "High", "Average", "Low", "Very Low"))
   )
 ```
+
 ```{r}
-ggplot(Grouped_data, aes(x = reorder(`PGPD Sector`, -total), y = total, fill =  z_category)) +
+#making the histogram, same as the past one, this time color coded by High/Low Z_score 
+ggplot(Grouped_data, aes(x = reorder(`zip_code`, -total_crimes), y = total_crimes, fill =  z_category)) +
   geom_col() +
   scale_fill_manual(values = c(
     "Very High" = "darkred",
@@ -100,28 +120,27 @@ ggplot(Grouped_data, aes(x = reorder(`PGPD Sector`, -total), y = total, fill =  
     "Very Low" = "blue"
   )) +
   labs(
-    x = "PGPD Sector",
+    x = "zip_code",
     y = "Total Crimes",
     fill = "Z-Score Category",
     title = "Crime Totals by PGPD Sector by Z score"
   ) +
   theme_minimal()
 ```
+#results show that 
 ```{r}
+#Loading in census data 
 acs_2022_5_year <- load_variables(2022, "acs5", cache = TRUE)
 
 view(acs_2022_5_year)
 ```
+#income by zip codes in PG County from 2022 census
 ```{r}
 income_by_zip <- get_acs(
   geography = "zcta",
   variables = "B19013_001", 
   year = 2022,
   survey = "acs5" )
-```
-
-```{r}
-glimpse(pg_zcta_shapes)
 ```
 
 
@@ -160,6 +179,7 @@ pg_income_map <- pg_zcta_shapes %>%
 
 
 ```{r}
+#map in shape of PG, head map based on wealth by Zipcode
 ggplot(data = pg_income_map) +
   geom_sf(aes(fill = estimate), color = "white") +
   scale_fill_viridis_c(option = "plasma", na.value = "grey90", name = "Median Income") +
@@ -169,6 +189,11 @@ ggplot(data = pg_income_map) +
     caption = "Source: U.S. Census Bureau, ACS 5-Year Estimates"
   ) +
   theme_minimal()
+```
+```{r}
+#joining the original data (crimes by zipcodes) with income by data
+pg_crime_income <- Grouped_data |>
+  left_join(pg_income, by = c("zip_code" = "GEOID"))
 ```
 ```{r}
 zip_crime_counts <- pg_crime_income |>
@@ -181,15 +206,18 @@ pg_crime_income_filtered <- pg_crime_income |>
   filter(total_crimes.x > 500)
 ```
 ```{r}
+pg_crime_income_under_500 <- pg_crime_income |>
+  left_join(zip_crime_counts, by = "zip_code") |>
+  filter(total_crimes.x < 500)
+```
+
+```{r}
 pg_crime_income_non_filtered <- pg_crime_income |>
   left_join(zip_crime_counts, by = "zip_code") 
 ```
 
 
-```{r}
-pg_crime_income <- Grouped_by_zip |>
-  left_join(pg_income, by = c("zip_code" = "GEOID"))
-```
+
 ```{r}
 #scatterplot to visualize the relationship between median income and crimes all zipcodes)
 pg_crime_income_non_filtered |>
@@ -207,16 +235,30 @@ pg_crime_income_filtered |>
   geom_smooth(method = "lm", se = FALSE, color = "red") +
   labs(x = "income", y = "total crimes", title = "Scatterplot of total_crimes vs median income")
 ```
+#this looks like there is a possible trend.
+```{r}
+#scatterplot to visualize the relationship between median income and crimes (only zip codes with less than 500 total crimes)
+
+pg_crime_income_under_500 |>
+  ggplot(aes(x = `estimate`, y = `total_crimes.x`)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(x = "income", y = "total crimes", title = "Scatterplot of total_crimes vs median income")
+```
+#looks like random points on a graph (seemingly no correlation )
 ```{r}
 model <- lm(`total_crimes.x` ~ `estimate`, data = pg_crime_income_filtered) #(only zip codes with more than 500 total crimes)
 
 summary(model)
 ```
+#P Value higher than 0.05 but just barely. R Squared is around .15, maybe explains a bit.
 ```{r}
 model_non <- lm(`total_crimes.x` ~ `estimate`, data = pg_crime_income_non_filtered) #(all zip codes )
 
-summary(model)
+summary(model_non)
+
 ```
+#p-value way too high, not statisticly significnt. Adjusted R square is basiclly 0, meaning income not causing crimes. 
 ```{r}
 pg_crime_income_filtered$predicted <- predict(model, newdata = pg_crime_income_filtered)
 
@@ -229,6 +271,7 @@ pg_crime_income_filtered <- pg_crime_income_filtered |>
   mutate(abs_residual = abs(residual)) |>
   arrange(desc(abs_residual))
 ```
+#after messing around with the original dataset, the residuals are much closer than I originally calculated, however still are iffy at best. 
 
 ```{r}
 pg_crime_income_non_filtered$predicted <- predict(model, newdata = pg_crime_income_non_filtered)
@@ -242,46 +285,40 @@ pg_crime_income_non_filtered <- pg_crime_income_non_filtered |>
   mutate(abs_residual = abs(residual)) |>
   arrange(desc(abs_residual))
 ```
+#these are all over the place. The predicted is almost never close.
 
-Hypothesis: 
-If a PGPD Sector Area has more than 4500 crimes in the area, the property value will be lower than if the Reporting Area has less than 3500 crimes
+Headline:
+“500 Crimes and Counting: Mapping the Invisible Line Between Income and Safety in Prince George’s County”
 
+Main Findings:
+Weak overall relationship between income and crime. When looking at all ZIP codes in Prince George’s County, the linear regression shows a very weak, statistically insignificant correlation between income and total crimes.R Squared = about 0.02  meaning income explains only about 2% of the variation in crime. p-value = 0.325 meaning not statistically significant.But once a ZIP code crosses the 500-crime mark, a pattern emerges
+In ZIP codes with 500 or more crimes, the regression strengthens: R Squared = 0.15 meaning income now explains 15% of the variation.
+Slope is negative (as expected): lower income correlates with more crime.
+p-value = 0.0604 -> just above the typical 0.05 threshold, but strong enough to suggest a pattern worth investigating.
+The trend indicates that ZIP codes with higher average incomes have notably fewer crimes, and the relationship becomes clearer once low-crime outliers are removed.
+This suggests a tipping point effect:
+Once crime passes a certain threshold (like 500), structural factors like poverty, segregation, and policing concentration begin to statistically track with income.
+Potential Problems / Limitations:
+Data Gaps: Several ZIP codes had missing income or crime totals and were excluded from the regression.
+Causation vs. Correlation: Income alone doesn’t explain crime, other factors like policing policies, housing density, education access, and racial demographics are also at play.
+ZIP Codes vs. Neighborhoods: ZIP codes are imperfect proxies for neighborhood-level dynamics; smaller geographies (like census tracts) could offer sharper insight.
+Under reporting and Classification: Crimes like accidents and impounds were removed, but other categories may be inconsistently classified or reported.
 
+Reporting Plan:
 
+Source Interviews
+Community Leaders in high-crime ZIP codes
+PGPD officers or public information staff
+Sociologists or urban economists who study poverty and crime
 
+Field Reporting
+Visit neighborhoods on either side of the 500-crime line to gather:
+-Resident perspectives on safety
+-Visible signs of policing, economic development, or abandonment
+-Contrasts in housing, infrastructure, and retail activity
 
-1) What does it contain and what time period does it cover?
+Narrative Angle
+Follow the story of one ZIP code that defies the trend, a low-income area with relatively low crime, or a wealthy ZIP code with an unusually high crime rate to find into what other forces might be at play.
 
-The data above includes case_id, date of occurrence, type of crime, and multiple different location indicators. The data spans from Jan 1 2023 to April 19th.
-
-2) Which columns will be most important for your analysis?
-
-I assume the most important data will be one of the location indicator columns, as it will allow me to combine this dataset with the property values to fully compare them. 
-
-3) What's missing that you might need or want? What questions do you have about it or need help answering? 
-
-Something missing that would be super helpful is a map number or a neighborhood name, something easily linked to the property value data. 
-
-I just don't know with this data alone, how I could combine or join the two datasets, or even make sure that we have some uniform way of determining location. 
-Something like, does the PGPD reporting code corespond to city district numbers etc. 
-
-
-My other data set seems to be not exportable..?
-this is the link
-https://sdat.dat.maryland.gov/RealProperty/Pages/default.aspx
-
-I have been messing around a lot with what to sort by and how to best line it up with the crime data. 
-
-1) What does it contain and what time period does it cover?
-
-When I search, I am using the same timeframe, and using a road that occurs a lot in the crime data. It gives aderress, account number, grantee, housing info, and date sold and selling price. 
-
-2) Which columns will be most important for your analysis?
-Once again, some location column may be the most important to link the data to crime, but the sale price is obviously super important as well. 
-
-3) Once again I would love this data to have a more defining piece of location. You can search for neighborhood and by certian codes but doesn't come up on the sheet. 
-
-How do I export this data?
-
-
-
+Why This Matters:
+This story uses data to reveal a threshold effect in Prince George’s County: crime patterns aren’t random, and they don’t correlate with income everywhere, but once violence and theft rise above a certain point, structural poverty begins to take center stage. That’s a crucial insight for local policymakers, police reform advocates, and the communities themselves.
